@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Add startup delay for database initialization
+sleep 5
+
 # Map Cloud Run's PORT to N8N_PORT if it exists
 if [ -n "$PORT" ]; then
   export N8N_PORT=$PORT
