@@ -174,6 +174,9 @@ gcloud artifacts repositories create n8n-repo \
 # Configure Docker to use gcloud as a credential helper
 gcloud auth configure-docker $REGION-docker.pkg.dev
 
+# Install buildx if not already installed (e.g. using Colima)
+brew install docker-buildx
+
 # Build and push your image
 docker build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT_ID/n8n-repo/n8n:latest .
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/n8n-repo/n8n:latest
