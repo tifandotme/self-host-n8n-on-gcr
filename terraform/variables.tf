@@ -6,7 +6,6 @@ variable "gcp_project_id" {
 variable "gcp_region" {
   description = "Google Cloud region for deployment."
   type        = string
-  default     = "us-west2"
 }
 
 variable "use_custom_image" {
@@ -15,29 +14,36 @@ variable "use_custom_image" {
   default     = false
 }
 
-variable "db_name" {
-  description = "Name for the Cloud SQL database."
+variable "db_host" {
+  description = "External database host."
   type        = string
-  default     = "n8n"
+}
+
+variable "db_name" {
+  description = "External database name."
+  type        = string
+  default     = "neondb"
 }
 
 variable "db_user" {
-  description = "Username for the Cloud SQL database user."
+  description = "External database user."
   type        = string
-  default     = "n8n-user"
+  default     = "neondb_owner"
 }
 
-variable "db_tier" {
-  description = "Cloud SQL instance tier."
+variable "db_password" {
+  description = "External database password."
   type        = string
-  default     = "db-f1-micro"
+  sensitive   = true
 }
 
-variable "db_storage_size" {
-  description = "Cloud SQL instance storage size in GB."
-  type        = number
-  default     = 10
+
+variable "db_port" {
+  description = "External database port."
+  type        = string
+  default     = "5432"
 }
+
 
 variable "artifact_repo_name" {
   description = "Name for the Artifact Registry repository (only used if use_custom_image is true)."
@@ -85,4 +91,36 @@ variable "generic_timezone" {
   description = "Timezone for n8n."
   type        = string
   default     = "UTC"
+}
+
+variable "actual_server_url" {
+  description = "Domain of the Actual Budget server."
+  type        = string
+}
+
+variable "actual_password" {
+  description = "Password for the Actual Budget server."
+  type        = string
+  sensitive   = true
+}
+
+variable "actual_sync_id" {
+  description = "Sync ID of the Actual Budget."
+  type        = string
+}
+
+variable "scheduler_times" {
+  description = "List of cron schedules in the local time of generic_timezone for waking up n8n Cloud Run service."
+  type        = list(string)
+}
+
+variable "custom_domain" {
+  description = "Custom domain to map to the n8n service."
+  type        = string
+}
+
+variable "license_activation_key" {
+  description = "Activation key for n8n license."
+  type        = string
+  sensitive   = true
 }
