@@ -1,0 +1,75 @@
+[env]
+PROJECT_ID = "n8n-auto-474809"
+GCP_REGION = "us-west1"
+
+[tools]
+terraform = "latest"
+
+[tasks.copy-tfvars]
+description = "Copy terraform.tfvars.example to terraform.tfvars"
+run = "cp terraform/terraform.tfvars.example terraform/terraform.tfvars"
+
+[tasks.set-project]
+description = "Set gcloud project to ensure correct context"
+run = """
+gcloud config set project $PROJECT_ID
+gcloud auth application-default set-quota-project $PROJECT_ID
+"""
+
+[tasks.configure-docker]
+description = "Configure Docker for gcloud"
+depends = ["set-project"]
+run = "gcloud auth configure-docker $GCP_REGION-docker.pkg.dev"
+
+[tasks.ensure-buildx]
+description = "Ensure docker-buildx is installed"
+run = "brew list docker-buildx || brew install docker-buildx"
+
+[tasks."terraform:init"]
+description = "Initialize Terraform"
+run = "terraform -chdir=terraform init"
+
+[tasks."terraform:fmt"]
+description = "Formats the Terraform files"
+run = "terraform -chdir=terraform fmt"
+
+[tasks."terraform:validate"]
+description = "Validates the Terraform files"
+run = "terraform -chdir=terraform validate"
+
+[tasks."terraform:check"]
+description = "Checks the Terraform files"
+depends = ["terraform:fmt", "terraform:validate"]
+
+[tasks."terraform:plan"]
+description = "Plan n8n deployment changes with Terraform"
+run = "terraform -chdir=terraform plan"
+
+[tasks."terraform:deploy"]
+description = "Deploy n8n via Terraform"
+run = "terraform -chdir=terraform apply -auto-approve"
+
+[tasks."terraform:destroy"]
+description = "Destroy Terraform-managed resources"
+run = "terraform -chdir=terraform destroy -auto-approve"
+
+[tasks."terraform:clean"]
+description = "Clean Terraform init artifacts"
+run = "rm -rf terraform/.terraform terraform/.terraform.lock.hcl"
+
+[tasks.create-state-bucket]
+description = "Create GCS bucket for Terraform remote state"
+run = "gcloud storage buckets create gs://n8n-terraform-state-bucket --project=$PROJECT_ID --location=$GCP_REGION"
+
+[tasks.build-and-push]
+description = "Build and push custom n8n image to Artifact Registry"
+depends = ["configure-docker", "ensure-buildx"]
+run = "docker buildx build --platform linux/amd64 -t $GCP_REGION-docker.pkg.dev/$PROJECT_ID/n8n-repo/n8n:latest --push ."
+
+[tasks.update-n8n]
+description = "Update n8n instance: pull latest image, build/push custom, redeploy"
+depends = ["configure-docker"]
+run = """
+mise run build-and-push
+terraform -chdir=terraform apply -auto-approve -replace=google_cloud_run_v2_service.n8n -replace=google_cloud_run_v2_service_iam_member.n8n_public_invoker
+"""
